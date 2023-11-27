@@ -399,7 +399,6 @@ public:
                     i = 0;
                 }
                 // Checks if item is available at if it can be bought
-                //cout << "The one being checked: " << items[i].name << ' ' << items[i].price << ' ' << items[i].quantity << "\n\n";
                 if (items[i].price <= money && items[i].quantity > 0) {
                     unsuccessfulBuy = 0;
                     money -=items[i].price;
@@ -407,14 +406,12 @@ public:
                     items[i].sold_quantity++;
 
                     auto it = find_if(bought.begin(), bought.end(), [&](InventoryItem& item) {
-                        //cout << item.name << ' ' << items[i].name << endl;
                         return strcmp(item.name, items[i].name) == 0;
                     });
 
                     // Item found in the bought vector
                     if (it != bought.end()) {
                         it->quantity++;
-                        //cout << "The one bought: " << it->name << ' ' << it->quantity << '\n';
                     }
                     // Not found makes a new element in vector
                     else {
@@ -422,7 +419,6 @@ public:
                         strcpy(bought.back().name, items[i].name);
                         bought.back().price = items[i].price;
                         bought.back().quantity = 1;
-                        //cout << "The one being bouth for the first time: " << bought.back().name << " 1\n";
                     }
                 }
                 else {

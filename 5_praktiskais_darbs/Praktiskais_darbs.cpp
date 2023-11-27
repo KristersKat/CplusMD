@@ -5,6 +5,7 @@
 #include <cstring>
 #include <algorithm>
 #include <limits>
+#include <tuple>
 
 using namespace std;
 
@@ -15,6 +16,7 @@ struct InventoryItem { //structure for items
     int sold_quantity;
 };
 
+// Would be enough with ADD = 1
 enum multChoice {
     ADD = 1,
     ALLITEMS = 2,
@@ -26,7 +28,10 @@ enum multChoice {
     MININCOME = 8,
     MAXPRICE = 9,
     MINPRICE = 10,
-    STOP = 11
+    ASORTI,
+    MAXAVAILABILITY,
+    MINAVAILABILITY,
+    STOP = 14
 };
 
 class InventoryManager {
@@ -371,6 +376,149 @@ public:
             cout << "\nDati nav pieejami!" << endl;
         }
     }
+
+    void asorti() {
+        ifstream productData("produkti.dat", ios::binary);
+        vector<InventoryItem> items;
+        InventoryItem item;
+
+        if (productData.is_open()) {
+            while (productData.read(reinterpret_cast<char*>(&item), sizeof(InventoryItem))) {
+                items.push_back(item);
+            }
+
+            int itemCount = items.size(), money, unsuccessfulBuy = 0, i = 0; // Iterator for the upcoming loop
+            cout << "Ievadiet naudas summu, ko veelieties izteereet:\n";
+            cin >> money;
+            vector<InventoryItem> bought;
+
+            // Checks if couldn't buy any item from the list
+            while (unsuccessfulBuy < itemCount) {
+                // If looped the whole vector return to the start of it
+                if (i == itemCount) {
+                    i = 0;
+                }
+                // Checks if item is available at if it can be bought
+                //cout << "The one being checked: " << items[i].name << ' ' << items[i].price << ' ' << items[i].quantity << "\n\n";
+                if (items[i].price <= money && items[i].quantity > 0) {
+                    unsuccessfulBuy = 0;
+                    money -=items[i].price;
+                    items[i].quantity--;
+                    items[i].sold_quantity++;
+
+                    auto it = find_if(bought.begin(), bought.end(), [&](InventoryItem& item) {
+                        //cout << item.name << ' ' << items[i].name << endl;
+                        return strcmp(item.name, items[i].name) == 0;
+                    });
+
+                    // Item found in the bought vector
+                    if (it != bought.end()) {
+                        it->quantity++;
+                        //cout << "The one bought: " << it->name << ' ' << it->quantity << '\n';
+                    }
+                    // Not found makes a new element in vector
+                    else {
+                        bought.emplace_back();
+                        strcpy(bought.back().name, items[i].name);
+                        bought.back().price = items[i].price;
+                        bought.back().quantity = 1;
+                        //cout << "The one being bouth for the first time: " << bought.back().name << " 1\n";
+                    }
+                }
+                else {
+                    unsuccessfulBuy++;
+                }
+                i++;
+            }
+            
+            cout << "\nNopirktaas preces:\n" << endl;
+            cout << "Nosaukums \t Cena \t Daudzums" << endl;
+            cout << "---------------------------------------" << endl;
+
+            for (const auto& item: bought) {
+                cout << item.name << "\t\t" << item.price << "\t\t" << item.quantity << endl;
+            }
+
+            cout << "---------------------------------------\n"
+                    "Paari palikusii summa: " << money << endl;
+
+            productData.close();
+        } else{
+            cout << "Dati nav pieejami" << endl;
+            return;
+        }
+
+        ofstream outFile("produkti.dat", ios::out | ios::binary);
+
+        if(outFile.is_open()){
+            for (const auto& item: items){
+                outFile.write(reinterpret_cast<const char*>(&item), sizeof(InventoryItem));
+            }
+            outFile.close();
+        } else {
+            cout << "Datus neizdevas saglabat!" << endl;
+        }
+    }
+
+    void top3MaxAvailable() { // kristers
+        // Use a funtion to read the data
+        ifstream productData("produkti.dat", ios::binary);
+        vector<InventoryItem> items;
+        InventoryItem item;
+
+        if (productData.is_open()) {
+            while (productData.read(reinterpret_cast<char*>(&item), sizeof(InventoryItem))) {
+                items.push_back(item);
+            }
+
+            // Can be raplaced with partial sort
+            sort(items.begin(), items.end(), [](const InventoryItem& a, const InventoryItem& b) {
+                return (a.quantity) > (b.quantity);
+            });
+
+            cout << "\nTop 3 visvairaak pieejamie produkti ir:\n" << endl;
+            cout << "Nosaukums \t Pieejami" << endl;
+            cout << "--------------------------" << endl;
+
+            for (int i = 0; i < 3; ++i) {
+                cout << items[i].name << "\t\t" << (items[i].quantity) << endl;
+            }
+
+            productData.close();
+        } else{
+            cout << "\nDati nav pieejami" << endl;
+        }
+    }
+
+    void top3MinAvailable() { // kristers
+        // Use a funtion to read the data
+        ifstream productData("produkti.dat", ios::binary);
+        vector<InventoryItem> items;
+        InventoryItem item;
+
+        if (productData.is_open()) {
+            while (productData.read(reinterpret_cast<char*>(&item), sizeof(InventoryItem))) {
+                items.push_back(item);
+            }
+
+            // Can be raplaced with partial sort
+            sort(items.begin(), items.end(), [](const InventoryItem& a, const InventoryItem& b) {
+                return (a.quantity) < (b.quantity);
+            });
+
+            cout << "\nTop 3 vismazaak pieejamie produkti ir:\n" << endl;
+            cout << "Nosaukums \t Pieejami" << endl;
+            cout << "--------------------------" << endl;
+
+            for (int i = 0; i < 3; ++i) {
+                cout << items[i].name << "\t\t" << (items[i].quantity) << endl;
+            }
+
+            productData.close();
+        } else{
+            cout << "\nDati nav pieejami" << endl;
+        }
+    }
 };
 
 int main() {  //roberts
@@ -390,17 +538,20 @@ int main() {  //roberts
             "8: Top3 produkti par kuriem ir vismazak nopelnits\n"
             "9: Top3 visdargakie produkti\n"
             "10: Top3 visletakie produkti\n"
-            "11: Beigt darbibu\n";
+            "11: Produktu asorti\n"
+            "12: Top3 visvairaak pieejamie produkti\n"
+            "13: Top3 vismazaak pieejamie produkti\n"
+            "14: Beigt darbibu\n";
 
         do {
-            cout << "\nLudzu ievadiet savu izveli (1-11): ";
+            cout << "\nLudzu ievadiet savu izveli (1-14): ";
             cin >> choice;
 
             if (cin.fail()) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
-        } while (choice < 1 || choice >11);
+        } while (choice < 1 || choice >14);
     
 
     switch (choice) {
@@ -433,6 +584,15 @@ int main() {  //roberts
             break;
         case MINPRICE:
             inventoryManager.top3MinPrice();
+            break;
+        case ASORTI:
+            inventoryManager.asorti();
+            break;
+        case MAXAVAILABILITY:
+            inventoryManager.top3MaxAvailable();
+            break;
+        case MINAVAILABILITY:
+            inventoryManager.top3MinAvailable();
             break;
         case STOP:
             works = false;

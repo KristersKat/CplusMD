@@ -387,7 +387,8 @@ public:
                 items.push_back(item);
             }
 
-            int itemCount = items.size(), money, unsuccessfulBuy = 0, i = 0; // Iterator for the upcoming loop
+            int itemCount = items.size(), unsuccessfulBuy = 0, i = 0; // Iterator for the upcoming loop
+            double money = 0;
             cout << "Ievadiet naudas summu, ko veelieties izteereet:\n";
             cin >> money;
             vector<InventoryItem> bought;
